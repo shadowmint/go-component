@@ -1,0 +1,33 @@
+{
+  "name": "go-component",
+  "version": "0.0.1",
+  "description": "Entity component system",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shadowmint/go-component.git"
+  },
+  "files": [
+    "index.js",
+    "scripts",
+    "src"
+  ],
+  "author": "douglas.linder@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/shadowmint/go-component/issues"
+  },
+  "homepage": "https://github.com/shadowmint/go-component",
+  "scripts": {
+    "test": "go test -v ./src/ntoolkit/...",
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "dependencies": {
+    "go-assert": "github:shadowmint/go-assert",
+    "go-errors": "github:shadowmint/go-errors",
+    "go-iter": "github:shadowmint/go-iter",
+    "go-threadpool": "github:shadowmint/go-threadpool",
+    "mkdirp": "^0.5.1",
+    "ncp": "^2.0.0"
+  }
+}
