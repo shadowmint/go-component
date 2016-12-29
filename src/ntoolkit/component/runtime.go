@@ -33,7 +33,7 @@ func (runtime *Runtime) Root() *Object {
 	return runtime.root
 }
 
-// Return the set of objects as an iterator.
+// Return the set of objects as an iterator, including root.
 func (runtime *Runtime) Objects() iter.Iter {
 	return runtime.root.Objects()
 }
@@ -41,11 +41,13 @@ func (runtime *Runtime) Objects() iter.Iter {
 // Execute the update step of all components on all objects in worker threads
 func (runtime *Runtime) Update(step float32) {
 	objects := runtime.Objects()
-	for val, err := objects.Next(); err == nil; val, err = objects.Next() {
-		obj := val.(*Object)
-		runtime.updateObject(step, obj)
+	if objects != nil {
+		for val, err := objects.Next(); err == nil; val, err = objects.Next() {
+			obj := val.(*Object)
+			runtime.updateObject(step, obj)
+		}
+		runtime.workers.Wait()
 	}
-	runtime.workers.Wait()
 }
 
 // Execute a single object update
