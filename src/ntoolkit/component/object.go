@@ -83,6 +83,26 @@ func (n *Object) addChildren(iterator *ObjectIter) {
 	}
 }
 
+// Find returns the first matching component on the object tree given by the name sequence
+func (n *Object) Find(componentType reflect.Type ,  query ...string) (Component, error) {
+	obj, err := n.FindObject(query...)
+	if err != nil {
+		return nil, err
+	}
+
+	cmp, err := obj.GetComponents(componentType).Next()
+	if err != nil {
+		return nil, err
+	}
+
+	return cmp.(Component), nil
+}
+
+// FindObject returns the first matching child object on the object tree given by the name sequence
+func (n *Object) FindObject(query ...string) (*Object, error) {
+	return nil, nil
+}
+
 // Debug prints out a summary of the object and its components
 func (n *Object) Debug(indents ...int) string {
 	indent := 0

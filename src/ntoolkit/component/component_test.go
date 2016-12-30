@@ -26,8 +26,8 @@ func (fake *FakeComponent) New() component.Component {
 	return &FakeComponent{}
 }
 
-func (fake *FakeComponent) Serialize() string {
-	return fmt.Sprintf("%s,%s", fake.Id, fake.Count)
+func (fake *FakeComponent) Serialize() (string, error) {
+	return fmt.Sprintf("%s,%d", fake.Id, fake.Count), nil
 }
 
 func (fake *FakeComponent) Deserialize(data string) error {

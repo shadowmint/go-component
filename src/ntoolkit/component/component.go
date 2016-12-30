@@ -11,7 +11,7 @@ type Component interface {
 // Persist should be implemented by components that need to persist state across serialization.
 type Persist interface {
 	// Serialize returns a string serialization of the data for the component
-	Serialize() string
+	Serialize() (string, error)
 
 	// Deserialize loads the string serialization of the data for the component
 	Deserialize(data string) error

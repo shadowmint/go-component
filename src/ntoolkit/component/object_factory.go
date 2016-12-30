@@ -28,7 +28,27 @@ func (factory *ObjectFactory) Register(provider ComponentProvider) {
 
 // Serialize converts an object into an ObjectTemplate
 func (factory *ObjectFactory) Serialize(object *Object) (*ObjectTemplate, error) {
-	return nil, nil
+	obj := &ObjectTemplate{Name: object.Name}
+
+	// Assign each component
+	for i := 0; i < len(object.components); i++ {
+		c, err := factory.serializeComponent(object.components[i])
+		if err != nil {
+			return nil, err
+		}
+		obj.Components = append(obj.Components, *c)
+	}
+
+	// Assign each object
+	for i := 0; i < len(object.children); i++ {
+		o, err := factory.Serialize(object.children[i])
+		if err != nil {
+			return nil, err
+		}
+		obj.Objects = append(obj.Objects, *o)
+	}
+
+	return obj, nil
 }
 
 // Deserialize converts an ObjectTemplate into an object
@@ -71,6 +91,20 @@ func (factory *ObjectFactory) deserializeComponent(template *ComponentTemplate) 
 		}
 	}
 	return nil, errors.Fail(ErrUnknownComponent{}, nil, fmt.Sprintf("Component type %s is not registered with the factory", template.Type))
+}
+
+// serializeComponent converts a component into a template
+func (factory *ObjectFactory) serializeComponent(component *componentInfo) (*ComponentTemplate, error) {
+	template := &ComponentTemplate{
+		Type: factory.typeName(component.Type)}
+	if component.Persist != nil {
+		data, err := component.Persist.Serialize()
+		if err != nil {
+			return nil, err
+		}
+		template.Data = data
+	}
+	return template, nil
 }
 
 // typeName returns the name for a specific type
