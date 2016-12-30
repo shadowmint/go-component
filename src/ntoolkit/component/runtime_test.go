@@ -8,23 +8,6 @@ import (
 	"ntoolkit/iter"
 )
 
-type FakeComponent struct {
-	Id    string
-	Count int
-}
-
-func (fake *FakeComponent) Type() reflect.Type {
-	return reflect.TypeOf(fake)
-}
-
-func (fake *FakeComponent) Update(_ *component.Context) {
-	fake.Count += 1
-}
-
-func (fake *FakeComponent) New() component.Component {
-	return &FakeComponent{}
-}
-
 func TestNew(T *testing.T) {
 	assert.Test(T, func(T *assert.T) {
 		component.NewRuntime(component.Config{

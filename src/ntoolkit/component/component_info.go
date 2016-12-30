@@ -9,6 +9,7 @@ type componentInfo struct {
 	Attach    Attach       // Attach interface for component, if any
 	Start     Start        // Start interface for component, if any
 	Update    Update       // Update interface for component, if any
+	Persist   Persist      // Persist interface for component, if any
 }
 
 func newComponentInfo(cmp Component) *componentInfo {
@@ -24,6 +25,9 @@ func newComponentInfo(cmp Component) *componentInfo {
 	}
 	if rtn.Type.Implements(reflect.TypeOf((*Update)(nil)).Elem()) {
 		rtn.Update = rtn.Component.(Update)
+	}
+	if rtn.Type.Implements(reflect.TypeOf((*Persist)(nil)).Elem()) {
+		rtn.Persist = rtn.Component.(Persist)
 	}
 	return rtn
 }

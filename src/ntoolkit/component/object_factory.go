@@ -61,7 +61,12 @@ func (factory *ObjectFactory) deserializeComponent(template *ComponentTemplate) 
 	for k, v := range factory.handlers {
 		if k == template.Type {
 			component := v.New()
-			// TODO: Deserialize the data here
+			if component.Type().Implements(reflect.TypeOf((*Persist)(nil)).Elem()) {
+				err := component.(Persist).Deserialize(template.Data)
+				if err != nil {
+					return nil, err
+				}
+			}
 			return component, nil
 		}
 	}

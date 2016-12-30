@@ -10,6 +10,6 @@ type ObjectTemplate struct {
 // ComponentTemplate is a serializable representation of a component
 type ComponentTemplate struct {
 	Type string
-	Data []byte
+	Data string
 }
 

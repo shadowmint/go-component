@@ -8,6 +8,15 @@ type Component interface {
 	Type() reflect.Type
 }
 
+// Persist should be implemented by components that need to persist state across serialization.
+type Persist interface {
+	// Serialize returns a string serialization of the data for the component
+	Serialize() string
+
+	// Deserialize loads the string serialization of the data for the component
+	Deserialize(data string) error
+}
+
 // Attach components are invoked when a component is assigned to an object.
 type Attach interface {
 	// Attach is invoked immediately after a component is attached to an object.
