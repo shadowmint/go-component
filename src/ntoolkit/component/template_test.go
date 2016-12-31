@@ -11,12 +11,12 @@ func TestBasicTemplateToObject(T *testing.T) {
 		factory := c.NewObjectFactory()
 		factory.Register(&FakeComponent{})
 		template := c.ObjectTemplate{
-			Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent"}},
+			Components: []c.ComponentTemplate{{Type: "*ntoolkit/component_test.FakeComponent"}},
 			Objects: []c.ObjectTemplate{
 				{Name: "First Child"},
-				{Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent"}},
+				{Components: []c.ComponentTemplate{{Type: "*ntoolkit/component_test.FakeComponent"}},
 					Objects: []c.ObjectTemplate{
-						{Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent"}}},
+						{Components: []c.ComponentTemplate{{Type: "*ntoolkit/component_test.FakeComponent"}}},
 						{Name: "Last Child"}}}}}
 
 		instance, err := factory.Deserialize(&template)
@@ -25,12 +25,12 @@ func TestBasicTemplateToObject(T *testing.T) {
 		T.Assert(instance != nil)
 
 		T.Assert(instance.Debug() == `object: Untitled (2 / 1)
-! *component_test.FakeComponent
+! *ntoolkit/component_test.FakeComponent
    object: First Child (0 / 0)
    object: Untitled (2 / 1)
-   ! *component_test.FakeComponent
+   ! *ntoolkit/component_test.FakeComponent
         object: Untitled (0 / 1)
-        ! *component_test.FakeComponent
+        ! *ntoolkit/component_test.FakeComponent
         object: Last Child (0 / 0)
 `)
 	})
@@ -41,12 +41,12 @@ func TestComponentDeserialization(T *testing.T) {
 		factory := c.NewObjectFactory()
 		factory.Register(&FakeComponent{})
 		template := c.ObjectTemplate{
-			Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent"}},
+			Components: []c.ComponentTemplate{{Type: "*ntoolkit/component_test.FakeComponent"}},
 			Objects: []c.ObjectTemplate{
 				{Name: "First Child"},
-				{Name: "D", Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent", Data: "Value2,5"}},
+				{Name: "D", Components: []c.ComponentTemplate{{Type: "*ntoolkit/component_test.FakeComponent", Data: "Value2,5"}},
 					Objects: []c.ObjectTemplate{
-						{Name: "C", Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent", Data: "Value1,1"}}},
+						{Name: "C", Components: []c.ComponentTemplate{{Type: "*ntoolkit/component_test.FakeComponent", Data: "Value1,1"}}},
 						{Name: "Last Child"}}}}}
 
 		instance, err := factory.Deserialize(&template)
@@ -72,12 +72,12 @@ func TestObjectToTemplate(T *testing.T) {
 		factory.Register(&FakeComponent{})
 
 		template := &c.ObjectTemplate{
-			Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent"}},
+			Components: []c.ComponentTemplate{{Type: "*ntoolkit/component_test.FakeComponent"}},
 			Objects: []c.ObjectTemplate{
 				{Name: "First Child"},
-				{Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent"}},
+				{Components: []c.ComponentTemplate{{Type: "*ntoolkit/component_test.FakeComponent"}},
 					Objects: []c.ObjectTemplate{
-						{Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent"}}},
+						{Components: []c.ComponentTemplate{{Type: "*ntoolkit/component_test.FakeComponent"}}},
 						{Name: "Last Child"}}}}}
 
 		instance, _ := factory.Deserialize(template)

@@ -87,11 +87,16 @@ func (n *Object) addChildren(iterator *ObjectIter) {
 // Find returns the first matching component on the object tree given by the name sequence or nil
 // component should be a pointer to store the output component into.
 // eg. If *FakeComponent implements Component, pass **FakeComponent to Find.
-func (n *Object) Find(component interface{},  query ...string) error {
+func (n *Object) Find(component interface{}, query ...string) error {
 	componentType := reflect.TypeOf(component).Elem()
-	obj, err := n.FindObject(query...)
-	if err != nil {
-		return err
+
+	obj := n
+	var err error
+	if len(query) != 0 {
+		obj, err = n.FindObject(query...)
+		if err != nil {
+			return err
+		}
 	}
 
 	cmp, err := obj.GetComponents(componentType).Next()
@@ -154,7 +159,7 @@ func (n *Object) Debug(indents ...int) string {
 	rtn := fmt.Sprintf("object: %s (%d / %d)\n", name, len(n.children), len(n.components))
 	if len(n.components) > 0 {
 		for i := 0; i < len(n.components); i++ {
-			rtn += fmt.Sprintf("! %s\n", n.components[i].Type)
+			rtn += fmt.Sprintf("! %s\n", typeName(n.components[i].Type))
 		}
 	}
 

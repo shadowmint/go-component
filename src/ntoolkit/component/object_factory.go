@@ -23,7 +23,7 @@ func NewObjectFactory() *ObjectFactory {
 
 // Register a ComponentProvider that can be used to serialize and deserialize objects
 func (factory *ObjectFactory) Register(provider ComponentProvider) {
-	factory.handlers[factory.typeName(provider.Type())] = provider
+	factory.handlers[typeName(provider.Type())] = provider
 }
 
 // Serialize converts an object into an ObjectTemplate
@@ -96,7 +96,7 @@ func (factory *ObjectFactory) deserializeComponent(template *ComponentTemplate) 
 // serializeComponent converts a component into a template
 func (factory *ObjectFactory) serializeComponent(component *componentInfo) (*ComponentTemplate, error) {
 	template := &ComponentTemplate{
-		Type: factory.typeName(component.Type)}
+		Type: typeName(component.Type)}
 	if component.Persist != nil {
 		data, err := component.Persist.Serialize()
 		if err != nil {
@@ -108,6 +108,13 @@ func (factory *ObjectFactory) serializeComponent(component *componentInfo) (*Com
 }
 
 // typeName returns the name for a specific type
-func (factory *ObjectFactory) typeName(T reflect.Type) string {
-	return fmt.Sprintf("%s", T)
+func typeName(T reflect.Type) string {
+	rtn := ""
+	if T.Kind() == reflect.Ptr {
+		rtn = fmt.Sprintf("*%s.%s", T.Elem().PkgPath(), T.Elem().Name())
+	} else {
+		rtn = fmt.Sprintf("%s.%s", T.PkgPath(), T.Name())
+	}
+	return rtn
 }
+

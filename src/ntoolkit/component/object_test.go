@@ -62,3 +62,24 @@ func TestFindComponent(T *testing.T) {
 		T.Assert(c2.Id == "Component")
 	})
 }
+
+func TestFindComponentOnRoot(T *testing.T) {
+	assert.Test(T, func(T *assert.T) {
+		o1 := component.NewObject("A")
+		o2 := component.NewObject("B")
+		o3 := component.NewObject("C")
+		o4 := component.NewObject("D")
+		c1 := &FakeComponent{Id:"Component"}
+
+		o1.AddObject(o2)
+		o2.AddObject(o3)
+		o3.AddObject(o4)
+		o1.AddComponent(c1)
+
+		var c2 *FakeComponent
+		err := o1.Find(&c2)
+
+		T.Assert(err == nil)
+		T.Assert(c2.Id == "Component")
+	})
+}
