@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"fmt"
 	"strings"
+	"ntoolkit/errors"
 )
 
 // Node is a game object type.
@@ -83,24 +84,59 @@ func (n *Object) addChildren(iterator *ObjectIter) {
 	}
 }
 
-// Find returns the first matching component on the object tree given by the name sequence
-func (n *Object) Find(componentType reflect.Type ,  query ...string) (Component, error) {
+// Find returns the first matching component on the object tree given by the name sequence or nil
+// component should be a pointer to store the output component into.
+// eg. If *FakeComponent implements Component, pass **FakeComponent to Find.
+func (n *Object) Find(component interface{},  query ...string) error {
+	componentType := reflect.TypeOf(component).Elem()
 	obj, err := n.FindObject(query...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	cmp, err := obj.GetComponents(componentType).Next()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return cmp.(Component), nil
+	reflect.ValueOf(component).Elem().Set(reflect.ValueOf(cmp))
+	return nil
 }
 
-// FindObject returns the first matching child object on the object tree given by the name sequence
+// FindObject returns the first matching child object on the object tree given by the name sequence or nil
 func (n *Object) FindObject(query ...string) (*Object, error) {
-	return nil, nil
+	if len(query) == 0 {
+		return nil, errors.Fail(ErrBadValue{}, nil, "Invalid query length of zero")
+	}
+
+	cursor := n
+	queryCursor := 0
+
+	var rtn *Object = nil
+	for rtn == nil {
+		next, err := cursor.GetObject(query[queryCursor])
+		if err != nil {
+			return nil, err
+		} else {
+			cursor = next
+		}
+
+		queryCursor += 1
+		if queryCursor == len(query) {
+			rtn = cursor
+		}
+	}
+
+	return rtn, nil
+}
+
+func (n *Object) GetObject(name string) (*Object, error) {
+	for i := 0; i < len(n.children); i++ {
+		if n.children[i].Name == name {
+			return n.children[i], nil
+		}
+	}
+	return nil, errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("No match for object '%s' on parent '%s'", name, n.Name))
 }
 
 // Debug prints out a summary of the object and its components

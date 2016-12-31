@@ -4,8 +4,6 @@ import (
 	"ntoolkit/assert"
 	"testing"
 	c "ntoolkit/component"
-	"ntoolkit/iter"
-	"reflect"
 )
 
 func TestBasicTemplateToObject(T *testing.T) {
@@ -46,9 +44,9 @@ func TestComponentDeserialization(T *testing.T) {
 			Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent"}},
 			Objects: []c.ObjectTemplate{
 				{Name: "First Child"},
-				{Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent", Data: "Value2,5"}},
+				{Name: "D", Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent", Data: "Value2,5"}},
 					Objects: []c.ObjectTemplate{
-						{Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent", Data: "Value1,1"}}},
+						{Name: "C", Components: []c.ComponentTemplate{{Type: "*component_test.FakeComponent", Data: "Value1,1"}}},
 						{Name: "Last Child"}}}}}
 
 		instance, err := factory.Deserialize(&template)
@@ -56,12 +54,15 @@ func TestComponentDeserialization(T *testing.T) {
 		T.Assert(err == nil)
 		T.Assert(instance != nil)
 
-		cmps, _ := iter.Collect(instance.GetComponentsInChildren(reflect.TypeOf((*FakeComponent)(nil))))
+		var c1 *FakeComponent
+		var c2 *FakeComponent
+		err = instance.Find(&c1, "D")
+		err = instance.Find(&c2, "D", "C")
 
-		T.Assert(cmps[1].(*FakeComponent).Id == "Value2")
-		T.Assert(cmps[1].(*FakeComponent).Count == 5)
-		T.Assert(cmps[2].(*FakeComponent).Id == "Value1")
-		T.Assert(cmps[2].(*FakeComponent).Count == 1)
+		T.Assert(c1.Id == "Value2")
+		T.Assert(c1.Count == 5)
+		T.Assert(c2.Id == "Value1")
+		T.Assert(c2.Count == 1)
 	})
 }
 

@@ -8,3 +8,6 @@ type ErrUnknownComponent struct{}
 
 // ErrBadValue is raised when an invalid value is used, eg. for serialization
 type ErrBadValue struct{}
+
+// ErrNoMatch is raised when failed trying to find an object
+type ErrNoMatch struct{}
