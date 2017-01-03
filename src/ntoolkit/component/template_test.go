@@ -94,3 +94,52 @@ func TestObjectToTemplate(T *testing.T) {
 		T.Assert(dump1 == dump2)
 	})
 }
+
+func TestTemplateToObjectViaFactory(T *testing.T) {
+	assert.Test(T, func(T *assert.T) {
+		factory := c.NewObjectFactory()
+		factory.Register(&FakeComponent{})
+		factory.Register(&FakeConfiguredComponent{})
+
+		template, err := c.ObjectTemplateFromJson(objectTemplateSimple)
+		T.Assert(err == nil)
+		T.Assert(template != nil)
+
+		instance, err := factory.Deserialize(template)
+		T.Assert(err == nil)
+		T.Assert(instance != nil)
+
+		var cmp *FakeConfiguredComponent
+		err = instance.Find(&cmp)
+		T.Assert(err == nil)
+
+		T.Assert(len(cmp.Data.Items) == 3)
+		T.Assert(cmp.Data.Items[2].Id == "3")
+		T.Assert(cmp.Data.Items[2].Count == 3)
+	})
+}
+
+
+func TestNestedTemplateToObjectViaFactory(T *testing.T) {
+	assert.Test(T, func(T *assert.T) {
+		factory := c.NewObjectFactory()
+		factory.Register(&FakeComponent{})
+		factory.Register(&FakeConfiguredComponent{})
+
+		template, err := c.ObjectTemplateFromJson(objectTemplateNested)
+		T.Assert(err == nil)
+		T.Assert(template != nil)
+
+		instance, err := factory.Deserialize(template)
+		T.Assert(err == nil)
+		T.Assert(instance != nil)
+
+		var cmp *FakeConfiguredComponent
+		err = instance.Find(&cmp, "One", "Two")
+		T.Assert(err == nil)
+
+		T.Assert(len(cmp.Data.Items) == 3)
+		T.Assert(cmp.Data.Items[2].Id == "3")
+		T.Assert(cmp.Data.Items[2].Count == 3)
+	})
+}

@@ -26,11 +26,20 @@ func (fake *FakeComponent) New() component.Component {
 	return &FakeComponent{}
 }
 
-func (fake *FakeComponent) Serialize() (string, error) {
+func (fake *FakeComponent) Serialize() (interface{}, error) {
 	return fmt.Sprintf("%s,%d", fake.Id, fake.Count), nil
 }
 
-func (fake *FakeComponent) Deserialize(data string) error {
+func (fake *FakeComponent) Deserialize(raw interface{}) error {
+	data, err := component.AsString(raw)
+	if err != nil {
+		if errors.Is(err, component.ErrNullValue{}) {
+			return nil
+		} else {
+			return err
+		}
+	}
+
 	if len(data) > 0 {
 		parts := strings.Split(data, ",")
 		if len(parts) != 2 {
@@ -43,6 +52,6 @@ func (fake *FakeComponent) Deserialize(data string) error {
 		}
 		fake.Count = count
 	}
-	return nil
 
+	return nil
 }
