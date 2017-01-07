@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"fmt"
 	"ntoolkit/errors"
+	"strings"
 )
 // ComponentProvider maps between component instances and component templates
 type ComponentProvider interface {
@@ -109,12 +110,21 @@ func (factory *ObjectFactory) serializeComponent(component *componentInfo) (*Com
 
 // typeName returns the name for a specific type
 func typeName(T reflect.Type) string {
-	rtn := ""
+	pkgPath := ""
+	typeName := ""
+	isPtr := false
 	if T.Kind() == reflect.Ptr {
-		rtn = fmt.Sprintf("*%s.%s", T.Elem().PkgPath(), T.Elem().Name())
+		isPtr = true
+		pkgPath = fmt.Sprintf("%s", T.Elem().PkgPath())
+		typeName = fmt.Sprintf("%s", T.Elem().Name())
 	} else {
-		rtn = fmt.Sprintf("%s.%s", T.PkgPath(), T.Name())
+		pkgPath = fmt.Sprintf("%s", T.PkgPath())
+		typeName = fmt.Sprintf("%s", T.Name())
+	}
+	pkgPath = strings.TrimPrefix(pkgPath, "vendor/")
+	rtn := fmt.Sprintf("%s.%s", pkgPath, typeName)
+	if isPtr {
+		rtn = "*" + rtn
 	}
 	return rtn
 }
-
