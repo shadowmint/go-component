@@ -11,3 +11,6 @@ type ErrBadValue struct{}
 
 // ErrNoMatch is raised when failed trying to find an object
 type ErrNoMatch struct{}
+
+// ErrBadObject is raised when trying to use an object for an invalid purpose (eg. as a parent for itself).
+type ErrBadObject struct{}

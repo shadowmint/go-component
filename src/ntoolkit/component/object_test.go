@@ -4,7 +4,21 @@ import (
 	"ntoolkit/assert"
 	"testing"
 	"ntoolkit/component"
+	"ntoolkit/errors"
 )
+
+
+func TestCannotMakeRecursiveObjects(T *testing.T) {
+	assert.Test(T, func(T *assert.T) {
+		o1 := component.NewObject("A")
+		o2 := component.NewObject("B")
+
+		o1.AddObject(o2)
+
+		T.Assert(errors.Is(o2.AddObject(o1), component.ErrBadObject{}))
+		T.Assert(errors.Is(o2.AddObject(o2), component.ErrBadObject{}))
+	})
+}
 
 func TestFindObject(T *testing.T) {
 	assert.Test(T, func(T *assert.T) {

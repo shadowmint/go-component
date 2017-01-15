@@ -14,6 +14,7 @@ type Object struct {
 	Runtime    *Runtime
 	components []*componentInfo // The set of components attached to this node
 	children   []*Object        // The set of child objects attached to this node
+	parent     *Object
 }
 
 // New returns a new Node
@@ -39,9 +40,32 @@ func (n *Object) AddComponent(component Component) {
 }
 
 // Add a child object
-func (n *Object) AddObject(object *Object) {
+func (n *Object) AddObject(object *Object) error {
+	if n == object || n.HasParent(object) {
+		return errors.Fail(ErrBadObject{}, nil, "Circular object references are not permitted")
+	}
 	n.children = append(n.children, object)
+	object.parent = n
+	return nil
 }
+
+// Check if an object has a parent
+func (n *Object) HasParent(object *Object) bool {
+	root := n
+	for root != nil {
+		root = root.Parent()
+		if root == object {
+			return true
+		}
+	}
+	return false
+}
+
+// Return the parent of this object
+func (n *Object) Parent() *Object {
+	return n.parent
+}
+
 
 // Objects returns an iterator of all the child objects on a game object
 func (n *Object) Objects() iter.Iter {
