@@ -10,6 +10,8 @@ import (
 type ObjectStorageMemory struct {
 	data    map[string]*ObjectTemplate
 	Pattern string // If set, only accept ids that match this.
+	CanSet  bool
+	CanGet  bool
 	pattern string
 	regex   *regexp.Regexp
 }
@@ -19,7 +21,9 @@ func NewObjectStorageMemory() *ObjectStorageMemory {
 	return &ObjectStorageMemory{
 		data: make(map[string]*ObjectTemplate),
 		Pattern: ".*",
-		pattern: ".*"}
+		pattern: ".*",
+		CanSet: true,
+		CanGet: true}
 }
 
 // rebuild the regex internally if the pattern changed for some reason
@@ -58,4 +62,12 @@ func (s *ObjectStorageMemory) Get(id string) (*ObjectTemplate, error) {
 		return nil, errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("No id %s in storage", id))
 	}
 	return template, nil
+}
+
+func (s *ObjectStorageMemory) Getter() ObjectStorageGetter {
+	return s
+}
+
+func (s *ObjectStorageMemory) Setter() ObjectStorageSetter {
+	return s
 }

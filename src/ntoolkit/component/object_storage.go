@@ -10,6 +10,11 @@ type ObjectStorageGetter interface {
 	Get(id string) (*ObjectTemplate, error)
 }
 
+type ObjectStorageProvider interface {
+	Setter() ObjectStorageSetter
+	Getter() ObjectStorageGetter
+}
+
 // ObjectStorage is a common high level interface for getting object templates and objects.
 type ObjectStorage struct {
 	Factory *ObjectFactory
@@ -18,11 +23,11 @@ type ObjectStorage struct {
 }
 
 // NewObjectStorage returns a new instance of an ObjectStorage
-func NewObjectStorage(factory *ObjectFactory, getter ObjectStorageGetter, setter ObjectStorageSetter) *ObjectStorage {
+func NewObjectStorage(factory *ObjectFactory, provider ObjectStorageProvider) *ObjectStorage {
 	return &ObjectStorage{
 		Factory: factory,
-		setter: setter,
-		getter: getter}
+		setter: provider.Setter(),
+		getter: provider.Getter()}
 }
 
 // CanSet returns true if an object setter is set
