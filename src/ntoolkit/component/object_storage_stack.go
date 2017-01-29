@@ -36,6 +36,16 @@ func (s *ObjectStorageStack) Set(id string, obj *ObjectTemplate) error {
 	return errors.Fail(ErrBadObject{}, err, "Unable to save object in any object storage instances")
 }
 
+func (s *ObjectStorageStack) Clear(id string) error {
+	var err error
+	for i := 0; i < len(s.set); i++ {
+		if err = s.set[i].Clear(id); err == nil {
+			return nil
+		}
+	}
+	return errors.Fail(ErrBadObject{}, err, "Unable to clear object in any object storage instances")
+}
+
 func (s *ObjectStorageStack) Get(id string) (*ObjectTemplate, error) {
 	var err error
 	var rtn *ObjectTemplate
@@ -45,6 +55,15 @@ func (s *ObjectStorageStack) Get(id string) (*ObjectTemplate, error) {
 		}
 	}
 	return nil, errors.Fail(ErrNoMatch{}, err, "Unable to get object from any object storage instances")
+}
+
+func (s *ObjectStorageStack) Has(id string) bool {
+	for i := 0; i < len(s.set); i++ {
+		if has := s.get[i].Has(id); has {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *ObjectStorageStack) Getter() ObjectStorageGetter {

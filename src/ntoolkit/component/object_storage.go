@@ -1,13 +1,13 @@
 package component
 
-import "ntoolkit/errors"
-
 type ObjectStorageSetter interface {
 	Set(id string, obj *ObjectTemplate) error
+	Clear(id string) error
 }
 
 type ObjectStorageGetter interface {
 	Get(id string) (*ObjectTemplate, error)
+	Has(id string) bool
 }
 
 type ObjectStorageProvider interface {
@@ -15,61 +15,45 @@ type ObjectStorageProvider interface {
 	Getter() ObjectStorageGetter
 }
 
-// ObjectStorage is a common high level interface for getting object templates and objects.
 type ObjectStorage struct {
-	Factory *ObjectFactory
-	getter  ObjectStorageGetter
-	setter  ObjectStorageSetter
+	active  *objectStorage
+	storage *objectStorage
 }
 
 // NewObjectStorage returns a new instance of an ObjectStorage
-func NewObjectStorage(factory *ObjectFactory, provider ObjectStorageProvider) *ObjectStorage {
+func NewObjectStorage(factory *ObjectFactory, active ObjectStorageProvider, storage ObjectStorageProvider) *ObjectStorage {
 	return &ObjectStorage{
-		Factory: factory,
-		setter: provider.Setter(),
-		getter: provider.Getter()}
+		active: newObjectStorage(factory, active),
+		storage: newObjectStorage(factory, storage)}
 }
 
-// CanSet returns true if an object setter is set
-func (s *ObjectStorage) CanSet() bool {
-	return s.setter != nil
+// Get an object; if it doesn't exist in the active list, load it.
+func (s *ObjectStorage) Get(id string) (*Object, error) {
+	return nil, nil
 }
 
-// CanGet returns true if an object getter is set
-func (s *ObjectStorage) CanGet() bool {
-	return s.getter != nil
+// Set an object into the active list.
+func (s *ObjectStorage) Set(id string, obj *Object) error {
+	return nil
 }
 
-// SetObject serializes an object to template and saves it
-func (s *ObjectStorage) SetObject(id string, obj *Object) error {
-	template, err := s.Factory.Serialize(obj)
-	if err != nil {
-		return err
-	}
-	return s.SetObjectTemplate(id, template)
+// Save pushes the given object from active into storage and drop it from the active list.
+func (s *ObjectStorage) Save(id string) error {
+	return nil
 }
 
-// SetObjectTemplate saves a template directly
-func (s *ObjectStorage) SetObjectTemplate(id string, obj *ObjectTemplate) error {
-	if !s.CanSet() {
-		return errors.Fail(ErrNotSupported{}, nil, "Set is not supported by this ObjectStorage")
-	}
-	return s.setter.Set(id, obj)
+// Active checks if the given object is currently in the active list.
+func (s *ObjectStorage) Active(id string) bool {
+	return false
 }
 
-// GetObject deserializes and returns the object for id
-func (s *ObjectStorage) GetObject(id string) (*Object, error) {
-	template, err := s.GetObjectTemplate(id)
-	if err != nil {
-		return nil, err
-	}
-	return s.Factory.Deserialize(template)
+// Exists checks if the given object is currently in the active list or storage.
+func (s *ObjectStorage) Exists(id string) bool {
+	return false
 }
 
-// GetObjectTemplate loads a template directly
-func (s *ObjectStorage) GetObjectTemplate(id string) (*ObjectTemplate, error) {
-	if !s.CanGet() {
-		return nil, errors.Fail(ErrNotSupported{}, nil, "Get is not supported by this ObjectStorage")
-	}
-	return s.getter.Get(id)
+// Clear completely removes the given object.
+func (s *ObjectStorage) Clear(id string) error {
+	return nil
 }
+

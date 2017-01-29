@@ -50,6 +50,20 @@ func (s *ObjectStorageMemory) Set(id string, obj *ObjectTemplate) error {
 	return nil
 }
 
+
+func (s *ObjectStorageMemory) Clear(id string) error {
+	if err := s.rebuild(); err != nil {
+		return err
+	}
+	if !s.regex.Match([]byte(id)) {
+		return errors.Fail(ErrBadValue{}, nil, fmt.Sprintf("Key %s does not match storage pattern %d", id, s.Pattern))
+	}
+	if _, ok := s.data[id]; ok {
+		delete(s.data, id)
+	}
+	return nil
+}
+
 func (s *ObjectStorageMemory) Get(id string) (*ObjectTemplate, error) {
 	if err := s.rebuild(); err != nil {
 		return nil, err
@@ -62,6 +76,17 @@ func (s *ObjectStorageMemory) Get(id string) (*ObjectTemplate, error) {
 		return nil, errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("No id %s in storage", id))
 	}
 	return template, nil
+}
+
+func (s *ObjectStorageMemory) Has(id string) bool {
+	if err := s.rebuild(); err != nil {
+		return false
+	}
+	if !s.regex.Match([]byte(id)) {
+		return false
+	}
+	_, ok := s.data[id]
+	return ok
 }
 
 func (s *ObjectStorageMemory) Getter() ObjectStorageGetter {

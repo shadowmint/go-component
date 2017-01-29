@@ -17,12 +17,14 @@ func objectStorageFixture() (*component.ObjectStorage, *component.ObjectStorageM
 
 	layer3 := component.NewObjectStorageMemory()
 
+	layer4 := component.NewObjectStorageMemory()
+
 	stack := component.NewObjectStorageStack()
 	stack.Add(layer1)
 	stack.Add(layer2)
 	stack.Add(layer3)
 
-	store := component.NewObjectStorage(component.NewObjectFactory(), stack)
+	store := component.NewObjectStorage(component.NewObjectFactory(), stack, layer4)
 	return store, layer1, layer2, layer3
 }
 
@@ -38,11 +40,11 @@ func TestChainedObjectSet(T *testing.T) {
 		store, l1, _, l3 := objectStorageFixture()
 
 		obj := component.NewObject("Foo1")
-		err := store.SetObject("Foo1", obj)
+		err := store.Set("Foo1", obj)
 		T.Assert(err == nil)
 
 		obj = component.NewObject("Bar1")
-		err = store.SetObject("Bar1", obj)
+		err = store.Set("Bar1", obj)
 		T.Assert(err == nil)
 
 		_, err = l1.Get("Foo1")
@@ -69,13 +71,15 @@ func TestChainedObjectGet(T *testing.T) {
 		objtmp, _ = factory.Serialize(obj)
 		l3.Set("Other", objtmp)
 
-		_, err := store.GetObject("Bar1")
+		_, err := store.Get("Bar1")
 		T.Assert(err == nil)
 
-		_, err = store.GetObject("Other")
+		_, err = store.Get("Other")
 		T.Assert(err == nil)
 
-		_, err = store.GetObject("Other2323")
+		_, err = store.Get("Other2323")
 		T.Assert(err != nil)
 	})
 }
+
+
