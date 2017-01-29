@@ -10,8 +10,8 @@ import (
 type ObjectStorageMemory struct {
 	data    map[string]*ObjectTemplate
 	Pattern string // If set, only accept ids that match this.
-	CanSet  bool
-	CanGet  bool
+	CanSet  bool // Controls the Setter() behaviour, not Set()
+	CanGet  bool // Controls the Getter() behaviour, not Get()
 	pattern string
 	regex   *regexp.Regexp
 }
@@ -65,9 +65,15 @@ func (s *ObjectStorageMemory) Get(id string) (*ObjectTemplate, error) {
 }
 
 func (s *ObjectStorageMemory) Getter() ObjectStorageGetter {
+	if !s.CanGet {
+		return nil
+	}
 	return s
 }
 
 func (s *ObjectStorageMemory) Setter() ObjectStorageSetter {
+	if !s.CanSet {
+		return nil
+	}
 	return s
 }
