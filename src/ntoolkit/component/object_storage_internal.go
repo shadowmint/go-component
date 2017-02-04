@@ -27,11 +27,11 @@ func (s *objectStorage) Clear(id string) error {
 }
 
 // Set saves an object if possible.
-func (s *objectStorage) Set(id string, obj *Object) error {
+func (s *objectStorage) Set(obj *Object) error {
 	if s.setter == nil {
 		return errors.Fail(ErrNotSupported{}, nil, "Set is not supported on this instance")
 	}
-	return s.setter.Set(id, obj, s.factory)
+	return s.setter.Set(obj, s.factory)
 }
 
 // Get saves an object if possible.

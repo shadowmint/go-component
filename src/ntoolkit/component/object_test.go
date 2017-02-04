@@ -2,11 +2,10 @@ package component_test
 
 import (
 	"ntoolkit/assert"
-	"testing"
 	"ntoolkit/component"
 	"ntoolkit/errors"
+	"testing"
 )
-
 
 func TestCannotMakeRecursiveObjects(T *testing.T) {
 	assert.Test(T, func(T *assert.T) {
@@ -62,7 +61,7 @@ func TestFindComponent(T *testing.T) {
 		o2 := component.NewObject("B")
 		o3 := component.NewObject("C")
 		o4 := component.NewObject("D")
-		c1 := &FakeComponent{Id:"Component"}
+		c1 := &FakeComponent{Id: "Component"}
 
 		o1.AddObject(o2)
 		o2.AddObject(o3)
@@ -83,7 +82,7 @@ func TestFindComponentOnRoot(T *testing.T) {
 		o2 := component.NewObject("B")
 		o3 := component.NewObject("C")
 		o4 := component.NewObject("D")
-		c1 := &FakeComponent{Id:"Component"}
+		c1 := &FakeComponent{Id: "Component"}
 
 		o1.AddObject(o2)
 		o2.AddObject(o3)
@@ -104,7 +103,7 @@ func TestModifyComponent(T *testing.T) {
 		o2 := component.NewObject("B")
 		o3 := component.NewObject("C")
 		o4 := component.NewObject("D")
-		c1 := &FakeComponent{Id:"Component"}
+		c1 := &FakeComponent{Id: "Component"}
 
 		o1.AddObject(o2)
 		o2.AddObject(o3)

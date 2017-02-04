@@ -29,7 +29,7 @@ func (factory *ObjectFactory) Register(provider ComponentProvider) {
 
 // Serialize converts an object into an ObjectTemplate
 func (factory *ObjectFactory) Serialize(object *Object) (*ObjectTemplate, error) {
-	obj := &ObjectTemplate{Name: object.Name}
+	obj := &ObjectTemplate{Name: object.name}
 
 	// Assign each component
 	for i := 0; i < len(object.components); i++ {

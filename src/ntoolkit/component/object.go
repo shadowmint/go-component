@@ -11,12 +11,13 @@ import (
 
 // Node is a game object type.
 type Object struct {
-	Name        string
-	Runtime     *Runtime
-	components  []*componentInfo // The set of components attached to this node
-	children    []*Object        // The set of child objects attached to this node
-	parent      *Object
-	writeLock   *sync.Mutex
+	name       string
+	runtime    *Runtime
+	components []*componentInfo // The set of components attached to this node
+	children   []*Object        // The set of child objects attached to this node
+	parent     *Object
+	writeLock  *sync.Mutex
+	locked     bool
 }
 
 // New returns a new Node
@@ -26,62 +27,68 @@ func NewObject(names ...string) *Object {
 		name = names[0]
 	}
 	return &Object{
-		Name: name,
-		Runtime : nil,
+		name:       name,
+		runtime:    nil,
 		components: make([]*componentInfo, 0),
-		children: make([]*Object, 0),
-		writeLock: &sync.Mutex{}}
+		children:   make([]*Object, 0),
+		writeLock:  &sync.Mutex{}}
 }
 
 // Add a behaviour to a node
-func (n *Object) AddComponent(component Component) {
-	n.lock()
+func (o *Object) AddComponent(component Component) {
 	info := newComponentInfo(component)
-	n.components = append(n.components, info)
-	if info.Attach != nil {
-		info.Attach.Attach(n)
-	}
-	n.unlock()
+	o.WithLock(func() error {
+		o.components = append(o.components, info)
+		if info.Attach != nil {
+			info.Attach.Attach(o)
+		}
+		return nil
+	})
 }
 
 // Add a child object
-func (n *Object) AddObject(object *Object) error {
-	var err error
-	n.lock()
-	if n == object || n.HasParent(object) {
-		err = errors.Fail(ErrBadObject{}, nil, "Circular object references are not permitted")
-	} else {
-		n.children = append(n.children, object)
-		object.lock()
-		object.parent = n
-		object.unlock()
-	}
-	n.unlock()
-	return err
+func (o *Object) AddObject(object *Object) error {
+	return o.WithLock(func() error {
+		if o == object || o.HasParent(object) {
+			return errors.Fail(ErrBadObject{}, nil, "Circular object references are not permitted")
+		} else {
+			o.children = append(o.children, object)
+			object.WithLock(func() error {
+				object.parent = o
+				return nil
+			})
+		}
+		return nil
+	})
 }
 
 // Remove a child object
-func (n *Object) RemoveObject(object *Object) error {
-	n.lock()
-	offset := -1
-	for i := 0; i < len(n.children); i++ {
-		if n.children[i] == object {
-			offset = i
-			break
+func (o *Object) RemoveObject(object *Object) error {
+	if o == object {
+		return errors.Fail(ErrBadObject{}, nil, "Cannot remove object from itself")
+	}
+	return o.WithLock(func() error {
+		offset := -1
+		for i := 0; i < len(o.children); i++ {
+			if o.children[i] == object {
+				offset = i
+				break
+			}
 		}
-	}
-	if offset >= 0 {
-		n.children = append(n.children[:offset], n.children[offset+1:]...)
-	}
-	object.parent = nil
-	n.unlock()
-	return nil
+		if offset >= 0 {
+			o.children = append(o.children[:offset], o.children[offset+1:]...)
+		}
+		object.WithLock(func() error {
+			object.parent = nil
+			return nil
+		})
+		return nil
+	})
 }
 
-
 // Check if an object has a parent
-func (n *Object) HasParent(object *Object) bool {
-	root := n
+func (o *Object) HasParent(object *Object) bool {
+	root := o
 	for root != nil {
 		root = root.Parent()
 		if root == object {
@@ -92,25 +99,37 @@ func (n *Object) HasParent(object *Object) bool {
 }
 
 // Return the parent of this object
-func (n *Object) Parent() *Object {
-	return n.parent
+func (o *Object) Parent() *Object {
+	return o.parent
 }
 
+// Return the root object in the current object tree
+func (o *Object) Root() *Object {
+	i := o
+	for {
+		j := i.parent
+		if j == nil {
+			break
+		}
+		i = j
+	}
+	return i
+}
 
 // Objects returns an iterator of all the child objects on a game object
-func (n *Object) Objects() iter.Iter {
-	return fromObject(n)
+func (o *Object) Objects() iter.Iter {
+	return fromObject(o)
 }
 
 // GetComponents returns an iterator of all components matching the given type.
-func (n *Object) GetComponents(T reflect.Type) iter.Iter {
-	return fromComponentArray(&n.components, T)
+func (o *Object) GetComponents(T reflect.Type) iter.Iter {
+	return fromComponentArray(&o.components, T)
 }
 
-// GetComponentsInChildren returns an iterator of all components matching the given type in all children.
-func (n *Object) GetComponentsInChildren(T reflect.Type) iter.Iter {
+// GetComponentsInChildren returns an iterator of all components matching the given type in all childreo.
+func (o *Object) GetComponentsInChildren(T reflect.Type) iter.Iter {
 	cIter := fromComponentArray(nil, T)
-	objIter := n.Objects()
+	objIter := o.Objects()
 	var val interface{} = nil
 	var err error = nil
 	for val, err = objIter.Next(); err == nil; val, err = objIter.Next() {
@@ -123,31 +142,36 @@ func (n *Object) GetComponentsInChildren(T reflect.Type) iter.Iter {
 }
 
 // Update all components in this object
-func (n *Object) Update(step float32, runtime *Runtime) {
-	clone := n.components
-	context := Context{Object: n, DeltaTime: step}
+func (o *Object) Update(step float32, runtime *Runtime) {
+	clone := o.components
+	context := Context{Object: o, DeltaTime: step, Logger: runtime.logger}
 	for i := 0; i < len(clone); i++ {
 		clone[i].updateComponent(step, runtime, &context)
 	}
 }
 
 // Extend an existing iterator with more objects
-func (n *Object) addChildren(iterator *ObjectIter) {
-	if len(n.children) > 0 {
-		iterator.values.PushBack(&n.children)
+func (o *Object) addChildren(iterator *ObjectIter) {
+	if len(o.children) > 0 {
+		iterator.values.PushBack(&o.children)
 	}
+}
+
+// Return the name for this object.
+func (o *Object) Name() string {
+	return o.name
 }
 
 // Find returns the first matching component on the object tree given by the name sequence or nil
 // component should be a pointer to store the output component into.
 // eg. If *FakeComponent implements Component, pass **FakeComponent to Find.
-func (n *Object) Find(component interface{}, query ...string) error {
+func (o *Object) Find(component interface{}, query ...string) error {
 	componentType := reflect.TypeOf(component).Elem()
 
-	obj := n
+	obj := o
 	var err error
 	if len(query) != 0 {
-		obj, err = n.FindObject(query...)
+		obj, err = o.FindObject(query...)
 		if err != nil {
 			return err
 		}
@@ -163,12 +187,12 @@ func (n *Object) Find(component interface{}, query ...string) error {
 }
 
 // FindObject returns the first matching child object on the object tree given by the name sequence or nil
-func (n *Object) FindObject(query ...string) (*Object, error) {
+func (o *Object) FindObject(query ...string) (*Object, error) {
 	if len(query) == 0 {
 		return nil, errors.Fail(ErrBadValue{}, nil, "Invalid query length of zero")
 	}
 
-	cursor := n
+	cursor := o
 	queryCursor := 0
 
 	var rtn *Object = nil
@@ -189,38 +213,37 @@ func (n *Object) FindObject(query ...string) (*Object, error) {
 	return rtn, nil
 }
 
-func (n *Object) GetObject(name string) (*Object, error) {
-	for i := 0; i < len(n.children); i++ {
-		if n.children[i].Name == name {
-			return n.children[i], nil
+func (o *Object) GetObject(name string) (*Object, error) {
+	for i := 0; i < len(o.children); i++ {
+		if o.children[i].name == name {
+			return o.children[i], nil
 		}
 	}
-	return nil, errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("No match for object '%s' on parent '%s'", name, n.Name))
+	return nil, errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("No match for object '%s' on parent '%s'", name, o.name))
 }
 
-
 // Debug prints out a summary of the object and its components
-func (n *Object) Debug(indents ...int) string {
+func (o *Object) Debug(indents ...int) string {
 	indent := 0
 	if len(indents) > 0 {
 		indent = indents[0]
 	}
 
-	name := n.Name
+	name := o.name
 	if len(name) == 0 {
 		name = "Untitled"
 	}
 
-	rtn := fmt.Sprintf("object: %s (%d / %d)\n", name, len(n.children), len(n.components))
-	if len(n.components) > 0 {
-		for i := 0; i < len(n.components); i++ {
-			rtn += fmt.Sprintf("! %s\n", typeName(n.components[i].Type))
+	rtn := fmt.Sprintf("object: %s (%d / %d)\n", name, len(o.children), len(o.components))
+	if len(o.components) > 0 {
+		for i := 0; i < len(o.components); i++ {
+			rtn += fmt.Sprintf("! %s\n", typeName(o.components[i].Type))
 		}
 	}
 
-	if len(n.children) > 0 {
-		for i := 0; i < len(n.children); i++ {
-			rtn += n.children[i].Debug(indent + 1) + "\n"
+	if len(o.children) > 0 {
+		for i := 0; i < len(o.children); i++ {
+			rtn += o.children[i].Debug(indent+1) + "\n"
 		}
 	}
 
@@ -243,29 +266,17 @@ func (n *Object) Debug(indents ...int) string {
 	return output
 }
 
-// Unlock for write
-func (o *Object) unlock() {
-	o.writeLock.Unlock()
-}
-
-// In order to lock we must first wait for any other write subtrees to finish.
-// We lock up to the root, then lock ourself, then unlock the parent chain.
-func (o *Object) lock() {
-	i := o.parent
-	for {
-		if i == nil {
-			break
+// Lock allows you to safely perform some action without worrying about sync issues.
+func (o *Object) WithLock(action func() error) (err error) {
+	defer (func() {
+		if r := recover(); r != nil {
+			err = r.(error)
 		}
-		i.writeLock.Lock()
-		i = i.parent
-	}
+		o.locked = false
+		o.writeLock.Unlock()
+	})()
 	o.writeLock.Lock()
-	i = o.parent
-	for {
-		if i == nil {
-			break
-		}
-		i.writeLock.Unlock()
-		i = i.parent
-	}
+	o.locked = true
+	err = action()
+	return err
 }

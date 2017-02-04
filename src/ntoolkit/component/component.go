@@ -1,6 +1,9 @@
 package component
 
-import "reflect"
+import (
+	"reflect"
+	"log"
+)
 
 // Component is a unit of functionality that can be attached to objects.
 type Component interface {
@@ -37,6 +40,7 @@ type Update interface {
 
 // Context provides a reference back to the owning game object and runtime state for a component
 type Context struct {
-	Object    *Object // The object the component is attached to.
-	DeltaTime float32 // The delta step in global time for the update.
+	Object    *Object     // The object the component is attached to.
+	DeltaTime float32     // The delta step in global time for the update.
+	Logger    *log.Logger // The runtime logger.
 }

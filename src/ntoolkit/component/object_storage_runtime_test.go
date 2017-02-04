@@ -4,10 +4,7 @@ import (
 	"ntoolkit/assert"
 	"testing"
 	"ntoolkit/component"
-//	"fmt"
-	//"strings"
 	"strings"
-	"fmt"
 )
 
 func objectStorageRuntimeFixture(T *assert.T) (*component.Runtime, *component.ObjectFactory, *component.ObjectStorage, *component.ObjectStorageRuntime, *component.ObjectStorageMemory, *component.ObjectStorageMemory) {
@@ -31,9 +28,9 @@ func objectStorageRuntimeFixture(T *assert.T) (*component.Runtime, *component.Ob
 	factory := component.NewObjectFactory()
 
 	// Push in a few templates to the hard coded template block
-	T.Assert(templates.Set("Room1", component.NewObject("Room1"), factory) == nil)
-	T.Assert(templates.Set("Room2", component.NewObject("Room2"), factory) == nil)
-	T.Assert(templates.Set("Room3", component.NewObject("Room3"), factory) == nil)
+	T.Assert(templates.Set(component.NewObject("Room1"), factory) == nil)
+	T.Assert(templates.Set(component.NewObject("Room2"), factory) == nil)
+	T.Assert(templates.Set(component.NewObject("Room3"), factory) == nil)
 
 	rtn := component.NewObjectStorage(factory, active, storage)
 	return runtime, factory, rtn, active, db, templates
@@ -113,8 +110,8 @@ func TestRuntimeStorageCanMoveBetweenStates(T *testing.T) {
 		T.Assert(err == nil)
 		T.Assert(room2 != nil)
 
-		room3 := component.NewObject()
-		fixture.Add("Room3", room3)
+		room3 := component.NewObject("Room3")
+		fixture.Add(room3)
 
 		// Adding shouldn't have saved objects
 		_, err = db.Get("Room1", factory)
@@ -176,8 +173,8 @@ func TestRuntimeStorageDrop(T *testing.T) {
 		T.Assert(err == nil)
 		T.Assert(room2 != nil)
 
-		room3 := component.NewObject()
-		fixture.Add("Room4", room3)
+		room3 := component.NewObject("Room4")
+		fixture.Add(room3)
 
 		T.Assert(strings.TrimSpace(runtime.Root().Debug()) == strings.TrimSpace(`
 object: Untitled (1 / 0)
@@ -203,7 +200,6 @@ object: Untitled (1 / 0)
 		T.Assert(!fixture.Active("Room4"))
 		T.Assert(!fixture.Exists("Room4"))
 
-		fmt.Printf("%s\n", runtime.Root().Debug())
 		T.Assert(strings.TrimSpace(runtime.Root().Debug()) == strings.TrimSpace(`
 object: Untitled (1 / 0)
    object: Rooms (1 / 0)
@@ -212,7 +208,6 @@ object: Untitled (1 / 0)
 
 		fixture.SetActive("Room1", true)
 
-		fmt.Printf("%s\n", runtime.Root().Debug())
 		T.Assert(strings.TrimSpace(runtime.Root().Debug()) == strings.TrimSpace(`
 object: Untitled (1 / 0)
    object: Rooms (2 / 0)

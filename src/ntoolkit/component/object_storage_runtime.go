@@ -2,7 +2,6 @@ package component
 
 import (
 	"ntoolkit/errors"
-	"fmt"
 )
 
 // ObjectStorageRuntime serializes and stores objects in a persistent memory cache.
@@ -20,16 +19,14 @@ func NewObjectStorageRuntime(root *Object) *ObjectStorageRuntime {
 		CanGet: true}
 }
 
-func (s *ObjectStorageRuntime) Set(id string, obj *Object, _ *ObjectFactory) error {
+func (s *ObjectStorageRuntime) Set(obj *Object, _ *ObjectFactory) error {
 	if obj == nil {
 		return errors.Fail(ErrNullValue{}, nil, "Unable to set null object")
 	}
-	old, err := s.root.GetObject(id)
+	old, err := s.root.GetObject(obj.name)
 	if !errors.Is(err, ErrNoMatch{}) {
 		s.root.RemoveObject(old)
 	}
-	fmt.Printf("Setting name on %s\n", obj)
-	obj.Name = id
 	return s.root.AddObject(obj)
 }
 

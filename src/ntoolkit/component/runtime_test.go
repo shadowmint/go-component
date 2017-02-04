@@ -1,10 +1,11 @@
 package component_test
 
 import (
-	"ntoolkit/assert"
-	"testing"
-	"ntoolkit/component"
 	"reflect"
+	"testing"
+
+	"ntoolkit/assert"
+	"ntoolkit/component"
 	"ntoolkit/iter"
 )
 

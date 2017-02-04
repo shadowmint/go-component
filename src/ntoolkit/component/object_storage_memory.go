@@ -39,18 +39,18 @@ func (s *ObjectStorageMemory) rebuild() error {
 	return nil
 }
 
-func (s *ObjectStorageMemory) Set(id string, obj *Object, factory *ObjectFactory) error {
+func (s *ObjectStorageMemory) Set(obj *Object, factory *ObjectFactory) error {
 	if err := s.rebuild(); err != nil {
 		return err
 	}
-	if !s.regex.Match([]byte(id)) {
-		return errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("Key %s does not match storage pattern %d", id, s.Pattern))
+	if !s.regex.Match([]byte(obj.name)) {
+		return errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("Key %s does not match storage pattern %d", obj.name, s.Pattern))
 	}
 	tmpl, err := factory.Serialize(obj)
 	if err != nil {
 		return err
 	}
-	s.data[id] = tmpl
+	s.data[obj.name] = tmpl
 	return nil
 }
 

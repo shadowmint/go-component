@@ -41,11 +41,11 @@ func TestChainedObjectSet(T *testing.T) {
 		store, f, l1, _, l3 := objectStorageFixture()
 
 		obj := component.NewObject("Foo1")
-		err := store.Add("Foo1", obj)
+		err := store.Add(obj)
 		T.Assert(err == nil)
 
 		obj = component.NewObject("Bar1")
-		err = store.Add("Bar1", obj)
+		err = store.Add(obj)
 		T.Assert(err == nil)
 
 		_, err = l1.Get("Foo1", f)
@@ -64,10 +64,10 @@ func TestChainedObjectGet(T *testing.T) {
 		store, f, _, l2, l3 := objectStorageFixture()
 
 		obj := component.NewObject("Bar1")
-		l2.Set("Bar1", obj, f)
+		l2.Set(obj, f)
 
 		obj = component.NewObject("Other")
-		l3.Set("Other", obj, f)
+		l3.Set(obj, f)
 
 		_, err := store.Get("Bar1")
 		T.Assert(err == nil)

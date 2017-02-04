@@ -3,7 +3,6 @@ package component
 import (
 	"ntoolkit/errors"
 	"encoding/json"
-	"fmt"
 )
 
 // ObjectTemplate is a simple, flat, serializable object structure that directly converts to and from Objects.
@@ -64,7 +63,6 @@ func AsObject(target interface{}, raw interface{}) (err error) {
 func AsString(raw interface{}) (rtn string, err error) {
 	defer (func() {
 		if r := recover(); r != nil {
-			fmt.Printf("ERRRRROR!!!!!!!!!!!!!!!!!!!!!!!!! %s\n", r)
 			err = r.(error)
 		}
 	})()
