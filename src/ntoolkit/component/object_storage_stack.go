@@ -1,6 +1,9 @@
 package component
 
-import "ntoolkit/errors"
+import (
+	"ntoolkit/errors"
+	"fmt"
+)
 
 // ObjectStorageStack abstracts over a stack of storage options.
 // Both get and set operations are chained through until a match is hit.
@@ -26,11 +29,15 @@ func (s *ObjectStorageStack) Add(storage ObjectStorageProvider) {
 	}
 }
 
-func (s *ObjectStorageStack) Set(id string, obj *ObjectTemplate) error {
+func (s *ObjectStorageStack) Set(id string, obj *Object, factory *ObjectFactory) error {
 	var err error
 	for i := 0; i < len(s.set); i++ {
-		if err = s.set[i].Set(id, obj); err == nil {
+		if err = s.set[i].Set(id, obj, factory); err == nil {
 			return nil
+		} else {
+			if !errors.Is(err, ErrNotSupported{}) && !errors.Is(err, ErrNoMatch{}) {
+				return err
+			}
 		}
 	}
 	return errors.Fail(ErrBadObject{}, err, "Unable to save object in any object storage instances")
@@ -39,28 +46,38 @@ func (s *ObjectStorageStack) Set(id string, obj *ObjectTemplate) error {
 func (s *ObjectStorageStack) Clear(id string) error {
 	var err error
 	for i := 0; i < len(s.set); i++ {
+		fmt.Printf("Dropped instance for %s\n", s.set[i])
 		if err = s.set[i].Clear(id); err == nil {
+			fmt.Printf("Successful DROP -> %s\n", s)
 			return nil
 		}
 	}
 	return errors.Fail(ErrBadObject{}, err, "Unable to clear object in any object storage instances")
 }
 
-func (s *ObjectStorageStack) Get(id string) (*ObjectTemplate, error) {
+func (s *ObjectStorageStack) Get(id string, factory *ObjectFactory) (*Object, error) {
 	var err error
-	var rtn *ObjectTemplate
-	for i := 0; i < len(s.set); i++ {
-		if rtn, err = s.get[i].Get(id); err == nil {
+	var rtn *Object
+	for i := 0; i < len(s.get); i++ {
+		if rtn, err = s.get[i].Get(id, factory); err == nil {
 			return rtn, nil
+		} else {
+			if !errors.Is(err, ErrNotSupported{}) && !errors.Is(err, ErrNoMatch{}) {
+				return nil, err
+			}
 		}
 	}
 	return nil, errors.Fail(ErrNoMatch{}, err, "Unable to get object from any object storage instances")
 }
 
 func (s *ObjectStorageStack) Has(id string) bool {
-	for i := 0; i < len(s.set); i++ {
+	fmt.Printf("Looking for match in %d instance\n", len(s.get))
+	for i := 0; i < len(s.get); i++ {
 		if has := s.get[i].Has(id); has {
+			fmt.Printf("Found match in %s!\n", s.get[i])
 			return true
+		} else {
+			fmt.Printf("No match in %s\n", s.get[i])
 		}
 	}
 	return false

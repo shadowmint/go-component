@@ -127,3 +127,40 @@ func TestModifyComponent(T *testing.T) {
 		T.Assert(c3.Count == 100)
 	})
 }
+
+func TestRemoveChild(T *testing.T) {
+	assert.Test(T, func(T *assert.T) {
+		o1 := component.NewObject("A")
+		o2 := component.NewObject("B")
+		o3 := component.NewObject("C")
+		o4 := component.NewObject("D")
+
+		o1.AddObject(o2)
+		o2.AddObject(o3)
+		o3.AddObject(o4)
+		o3.RemoveObject(o4)
+
+		_, err := o3.GetObject("D")
+		T.Assert(err != nil)
+	})
+}
+
+func TestRemoveChildWithChildren(T *testing.T) {
+	assert.Test(T, func(T *assert.T) {
+		o1 := component.NewObject("A")
+		o2 := component.NewObject("B")
+		o3 := component.NewObject("C")
+		o4 := component.NewObject("D")
+
+		o1.AddObject(o2)
+		o2.AddObject(o3)
+		o3.AddObject(o4)
+		o2.RemoveObject(o3)
+
+		_, err := o2.GetObject("C")
+		T.Assert(err != nil)
+
+		_, err = o3.GetObject("D")
+		T.Assert(err == nil)
+	})
+}

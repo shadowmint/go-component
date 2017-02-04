@@ -16,36 +16,28 @@ func newObjectStorage(factory *ObjectFactory, provider ObjectStorageProvider) *o
 		getter: provider.Getter()}
 }
 
-// SetObject serializes an object to template and saves it
-func (s *objectStorage) SetObject(id string, obj *Object) error {
-	template, err := s.factory.Serialize(obj)
-	if err != nil {
-		return err
-	}
-	return s.SetObjectTemplate(id, template)
+// Check if the given id is in the storage
+func (s *objectStorage) Has(id string) bool {
+	return s.getter.Has(id)
 }
 
-// SetObjectTemplate saves a template directly
-func (s *objectStorage) SetObjectTemplate(id string, obj *ObjectTemplate) error {
+// Remove the given id from the storage
+func (s *objectStorage) Clear(id string) error {
+	return s.setter.Clear(id)
+}
+
+// Set saves an object if possible.
+func (s *objectStorage) Set(id string, obj *Object) error {
 	if s.setter == nil {
-		return errors.Fail(ErrNotSupported{}, nil, "Set is not supported by this ObjectStorage")
+		return errors.Fail(ErrNotSupported{}, nil, "Set is not supported on this instance")
 	}
-	return s.setter.Set(id, obj)
+	return s.setter.Set(id, obj, s.factory)
 }
 
-// GetObject deserializes and returns the object for id
-func (s *objectStorage) GetObject(id string) (*Object, error) {
-	template, err := s.GetObjectTemplate(id)
-	if err != nil {
-		return nil, err
-	}
-	return s.factory.Deserialize(template)
-}
-
-// GetObjectTemplate loads a template directly
-func (s *objectStorage) GetObjectTemplate(id string) (*ObjectTemplate, error) {
+// Get saves an object if possible.
+func (s *objectStorage) Get(id string) (*Object, error) {
 	if s.getter == nil {
-		return nil, errors.Fail(ErrNotSupported{}, nil, "Get is not supported by this ObjectStorage")
+		return nil, errors.Fail(ErrNotSupported{}, nil, "Get is not supported on this instance")
 	}
-	return s.getter.Get(id)
+	return s.getter.Get(id, s.factory)
 }

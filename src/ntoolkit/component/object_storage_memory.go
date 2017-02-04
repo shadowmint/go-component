@@ -39,14 +39,18 @@ func (s *ObjectStorageMemory) rebuild() error {
 	return nil
 }
 
-func (s *ObjectStorageMemory) Set(id string, obj *ObjectTemplate) error {
+func (s *ObjectStorageMemory) Set(id string, obj *Object, factory *ObjectFactory) error {
 	if err := s.rebuild(); err != nil {
 		return err
 	}
 	if !s.regex.Match([]byte(id)) {
-		return errors.Fail(ErrBadValue{}, nil, fmt.Sprintf("Key %s does not match storage pattern %d", id, s.Pattern))
+		return errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("Key %s does not match storage pattern %d", id, s.Pattern))
 	}
-	s.data[id] = obj
+	tmpl, err := factory.Serialize(obj)
+	if err != nil {
+		return err
+	}
+	s.data[id] = tmpl
 	return nil
 }
 
@@ -56,7 +60,7 @@ func (s *ObjectStorageMemory) Clear(id string) error {
 		return err
 	}
 	if !s.regex.Match([]byte(id)) {
-		return errors.Fail(ErrBadValue{}, nil, fmt.Sprintf("Key %s does not match storage pattern %d", id, s.Pattern))
+		return errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("Key %s does not match storage pattern %d", id, s.Pattern))
 	}
 	if _, ok := s.data[id]; ok {
 		delete(s.data, id)
@@ -64,18 +68,22 @@ func (s *ObjectStorageMemory) Clear(id string) error {
 	return nil
 }
 
-func (s *ObjectStorageMemory) Get(id string) (*ObjectTemplate, error) {
+func (s *ObjectStorageMemory) Get(id string, factory *ObjectFactory) (*Object, error) {
 	if err := s.rebuild(); err != nil {
 		return nil, err
 	}
 	if !s.regex.Match([]byte(id)) {
-		return nil, errors.Fail(ErrBadValue{}, nil, fmt.Sprintf("Key %s does not match storage pattern %d", id, s.Pattern))
+		return nil, errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("Key %s does not match storage pattern %d", id, s.Pattern))
 	}
 	template, ok := s.data[id]
 	if !ok {
 		return nil, errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("No id %s in storage", id))
 	}
-	return template, nil
+	obj, err := factory.Deserialize(template)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
 }
 
 func (s *ObjectStorageMemory) Has(id string) bool {

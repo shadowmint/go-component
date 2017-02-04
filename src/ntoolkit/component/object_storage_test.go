@@ -6,7 +6,7 @@ import (
 	"ntoolkit/component"
 )
 
-func objectStorageFixture() (*component.ObjectStorage, *component.ObjectStorageMemory, *component.ObjectStorageMemory, *component.ObjectStorageMemory) {
+func objectStorageFixture() (*component.ObjectStorage, *component.ObjectFactory, *component.ObjectStorageMemory, *component.ObjectStorageMemory, *component.ObjectStorageMemory) {
 	layer1 := component.NewObjectStorageMemory()
 	layer1.Pattern = "^Foo.*"
 	layer1.CanGet = false
@@ -24,52 +24,50 @@ func objectStorageFixture() (*component.ObjectStorage, *component.ObjectStorageM
 	stack.Add(layer2)
 	stack.Add(layer3)
 
-	store := component.NewObjectStorage(component.NewObjectFactory(), stack, layer4)
-	return store, layer1, layer2, layer3
+	factory := component.NewObjectFactory()
+	store := component.NewObjectStorage(factory, stack, layer4)
+	return store, factory, layer1, layer2, layer3
 }
 
 func TestCreateObjectStorage(T *testing.T) {
 	assert.Test(T, func(T *assert.T) {
-		store, _, _, _ := objectStorageFixture()
+		store, _, _, _, _ := objectStorageFixture()
 		T.Assert(store != nil)
 	})
 }
 
 func TestChainedObjectSet(T *testing.T) {
 	assert.Test(T, func(T *assert.T) {
-		store, l1, _, l3 := objectStorageFixture()
+		store, f, l1, _, l3 := objectStorageFixture()
 
 		obj := component.NewObject("Foo1")
-		err := store.Set("Foo1", obj)
+		err := store.Add("Foo1", obj)
 		T.Assert(err == nil)
 
 		obj = component.NewObject("Bar1")
-		err = store.Set("Bar1", obj)
+		err = store.Add("Bar1", obj)
 		T.Assert(err == nil)
 
-		_, err = l1.Get("Foo1")
+		_, err = l1.Get("Foo1", f)
 		T.Assert(err == nil)
 
-		_, err = l3.Get("Bar1")
+		_, err = l3.Get("Bar1", f)
 		T.Assert(err == nil)
 
-		_, err = l3.Get("Other")
+		_, err = l3.Get("Other", f)
 		T.Assert(err != nil)
 	})
 }
 
 func TestChainedObjectGet(T *testing.T) {
 	assert.Test(T, func(T *assert.T) {
-		store, _, l2, l3 := objectStorageFixture()
+		store, f, _, l2, l3 := objectStorageFixture()
 
-		factory := component.NewObjectFactory()
 		obj := component.NewObject("Bar1")
-		objtmp, _ := factory.Serialize(obj)
-		l2.Set("Bar1", objtmp)
+		l2.Set("Bar1", obj, f)
 
 		obj = component.NewObject("Other")
-		objtmp, _ = factory.Serialize(obj)
-		l3.Set("Other", objtmp)
+		l3.Set("Other", obj, f)
 
 		_, err := store.Get("Bar1")
 		T.Assert(err == nil)

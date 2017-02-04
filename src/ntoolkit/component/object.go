@@ -6,15 +6,17 @@ import (
 	"fmt"
 	"strings"
 	"ntoolkit/errors"
+	"sync"
 )
 
 // Node is a game object type.
 type Object struct {
-	Name       string
-	Runtime    *Runtime
-	components []*componentInfo // The set of components attached to this node
-	children   []*Object        // The set of child objects attached to this node
-	parent     *Object
+	Name        string
+	Runtime     *Runtime
+	components  []*componentInfo // The set of components attached to this node
+	children    []*Object        // The set of child objects attached to this node
+	parent      *Object
+	writeLock   *sync.Mutex
 }
 
 // New returns a new Node
@@ -27,27 +29,55 @@ func NewObject(names ...string) *Object {
 		Name: name,
 		Runtime : nil,
 		components: make([]*componentInfo, 0),
-		children: make([]*Object, 0)}
+		children: make([]*Object, 0),
+		writeLock: &sync.Mutex{}}
 }
 
 // Add a behaviour to a node
 func (n *Object) AddComponent(component Component) {
+	n.lock()
 	info := newComponentInfo(component)
 	n.components = append(n.components, info)
 	if info.Attach != nil {
 		info.Attach.Attach(n)
 	}
+	n.unlock()
 }
 
 // Add a child object
 func (n *Object) AddObject(object *Object) error {
+	var err error
+	n.lock()
 	if n == object || n.HasParent(object) {
-		return errors.Fail(ErrBadObject{}, nil, "Circular object references are not permitted")
+		err = errors.Fail(ErrBadObject{}, nil, "Circular object references are not permitted")
+	} else {
+		n.children = append(n.children, object)
+		object.lock()
+		object.parent = n
+		object.unlock()
 	}
-	n.children = append(n.children, object)
-	object.parent = n
+	n.unlock()
+	return err
+}
+
+// Remove a child object
+func (n *Object) RemoveObject(object *Object) error {
+	n.lock()
+	offset := -1
+	for i := 0; i < len(n.children); i++ {
+		if n.children[i] == object {
+			offset = i
+			break
+		}
+	}
+	if offset >= 0 {
+		n.children = append(n.children[:offset], n.children[offset+1:]...)
+	}
+	object.parent = nil
+	n.unlock()
 	return nil
 }
+
 
 // Check if an object has a parent
 func (n *Object) HasParent(object *Object) bool {
@@ -168,6 +198,7 @@ func (n *Object) GetObject(name string) (*Object, error) {
 	return nil, errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("No match for object '%s' on parent '%s'", name, n.Name))
 }
 
+
 // Debug prints out a summary of the object and its components
 func (n *Object) Debug(indents ...int) string {
 	indent := 0
@@ -210,4 +241,31 @@ func (n *Object) Debug(indents ...int) string {
 	}
 
 	return output
+}
+
+// Unlock for write
+func (o *Object) unlock() {
+	o.writeLock.Unlock()
+}
+
+// In order to lock we must first wait for any other write subtrees to finish.
+// We lock up to the root, then lock ourself, then unlock the parent chain.
+func (o *Object) lock() {
+	i := o.parent
+	for {
+		if i == nil {
+			break
+		}
+		i.writeLock.Lock()
+		i = i.parent
+	}
+	o.writeLock.Lock()
+	i = o.parent
+	for {
+		if i == nil {
+			break
+		}
+		i.writeLock.Unlock()
+		i = i.parent
+	}
 }
