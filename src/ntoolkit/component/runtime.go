@@ -16,7 +16,6 @@ type Config struct {
 // Runtime is the basic operating unit of the mud.
 // A Runtime executes the main game loop on objects.
 type Runtime struct {
-	locked  bool                   // Is this runtime current locked for updates?
 	root    *Object                // The root object for this runtime.
 	workers *threadpool.ThreadPool // The thread pool for updating objects
 	logger  *log.Logger            // The logger for this runtime, if any.
@@ -26,7 +25,6 @@ type Runtime struct {
 func NewRuntime(config Config) *Runtime {
 	validateConfig(&config)
 	runtime := &Runtime{
-		locked:  false,
 		root:    NewObject(),
 		logger:  config.Logger,
 		workers: threadpool.New()}

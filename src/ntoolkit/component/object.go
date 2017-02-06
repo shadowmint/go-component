@@ -11,6 +11,7 @@ import (
 
 // Node is a game object type.
 type Object struct {
+	id         string
 	name       string
 	runtime    *Runtime
 	components []*componentInfo // The set of components attached to this node
@@ -27,6 +28,7 @@ func NewObject(names ...string) *Object {
 		name = names[0]
 	}
 	return &Object{
+		id:         makeObjectId(),
 		name:       name,
 		runtime:    nil,
 		components: make([]*componentInfo, 0),
@@ -160,6 +162,11 @@ func (o *Object) addChildren(iterator *ObjectIter) {
 // Return the name for this object.
 func (o *Object) Name() string {
 	return o.name
+}
+
+// Return the unique id of this object.
+func (o *Object) ID() string {
+	return o.id
 }
 
 // Find returns the first matching component on the object tree given by the name sequence or nil

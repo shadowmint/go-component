@@ -28,6 +28,15 @@ func ObjectTemplateFromJson(raw string) (*ObjectTemplate, error) {
 	return &data, nil
 }
 
+// AsJson saves an object template as a json block.
+func ObjectTemplateAsJson(template *ObjectTemplate) ([]byte, error) {
+	raw, err := json.Marshal(template)
+	if err != nil {
+		return nil, err
+	}
+	return raw, nil
+}
+
 // AsObject converts a map[string]interface{} as a typed object.
 // This is a helper for serializable components.
 func AsObject(target interface{}, raw interface{}) (err error) {
