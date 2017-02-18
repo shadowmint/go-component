@@ -5,8 +5,8 @@ import (
 	"ntoolkit/component"
 	"fmt"
 	"strings"
-	"ntoolkit/errors"
 	"strconv"
+	"ntoolkit/errors"
 )
 
 type FakeComponent struct {
@@ -31,15 +31,10 @@ func (fake *FakeComponent) Serialize() (interface{}, error) {
 }
 
 func (fake *FakeComponent) Deserialize(raw interface{}) error {
-	data, err := component.AsString(raw)
-	if err != nil {
-		if errors.Is(err, component.ErrNullValue{}) {
-			return nil
-		} else {
-			return err
-		}
+	if raw == nil {
+		return nil
 	}
-
+	data := raw.(string)
 	if len(data) > 0 {
 		parts := strings.Split(data, ",")
 		if len(parts) != 2 {

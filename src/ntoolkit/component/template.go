@@ -37,9 +37,26 @@ func ObjectTemplateAsJson(template *ObjectTemplate) ([]byte, error) {
 	return raw, nil
 }
 
+// AsObject converts an arbitrary object into a json format map[string]interface{}.
+// This is a helper for serializable components.
+func SerializeState(state interface{}) (map[string]interface{}, error) {
+	bytes, err := json.Marshal(state)
+	if err != nil {
+		return nil, errors.Fail(ErrBadValue{}, err, "Failed to re-encode data")
+	}
+
+	var placeholder interface{}
+	err = json.Unmarshal(bytes, &placeholder)
+	if err != nil {
+		return nil, errors.Fail(ErrBadValue{}, err, "Failed to decode data")
+	}
+
+	return placeholder.(map[string]interface{}), nil
+}
+
 // AsObject converts a map[string]interface{} as a typed object.
 // This is a helper for serializable components.
-func AsObject(target interface{}, raw interface{}) (err error) {
+func DeserializeState(target interface{}, raw interface{}) (err error) {
 	defer (func() {
 		if r := recover(); r != nil {
 			err = r.(error)
@@ -65,19 +82,4 @@ func AsObject(target interface{}, raw interface{}) (err error) {
 	}
 
 	return nil
-}
-
-// AsString converts a map[string]interface{} as a string object.
-// This is a helper for serializable components.
-func AsString(raw interface{}) (rtn string, err error) {
-	defer (func() {
-		if r := recover(); r != nil {
-			err = r.(error)
-		}
-	})()
-	if raw == nil {
-		return "", errors.Fail(ErrNullValue{}, nil, "No data (null)")
-	}
-	value := raw.(string)
-	return value, nil
 }

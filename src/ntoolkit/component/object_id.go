@@ -16,7 +16,7 @@ func makeTimestamp() int64 {
 
 func makeObjectId() string {
 	once.Do(initRand)
-	return fmt.Sprintf("%s-%s", makeTimestamp(), randomSeed.Int63())
+	return fmt.Sprintf("%d-%d", makeTimestamp(), randomSeed.Int63())
 }
 
 func initRand() {

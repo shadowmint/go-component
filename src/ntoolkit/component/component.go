@@ -43,4 +43,5 @@ type Context struct {
 	Object    *Object     // The object the component is attached to.
 	DeltaTime float32     // The delta step in global time for the update.
 	Logger    *log.Logger // The runtime logger.
+	Runtime   *Runtime
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"ntoolkit/errors"
 	"sync"
+	_ "runtime/debug"
 )
 
 // Node is a game object type.
@@ -41,25 +42,40 @@ func (o *Object) AddComponent(component Component) {
 	info := newComponentInfo(component)
 	o.WithLock(func() error {
 		o.components = append(o.components, info)
-		if info.Attach != nil {
-			info.Attach.Attach(o)
+		return nil
+	})
+	if info.Attach != nil {
+		info.Attach.Attach(o)
+	}
+}
+
+// Add a child object
+func (o *Object) AddObject(object *Object) error {
+	object.Move(nil)
+	return o.WithLock(func() error {
+		if o == object || o.HasParent(object) {
+			return errors.Fail(ErrBadObject{}, nil, "Circular object references are not permitted")
+		} else {
+			// Move the object into the new parent 'o'; this will lock the child and the old parent.
+			object.Move(o)
+
+			// Now assign a new reference to this object
+			o.children = append(o.children, object)
 		}
 		return nil
 	})
 }
 
-// Add a child object
-func (o *Object) AddObject(object *Object) error {
-	return o.WithLock(func() error {
-		if o == object || o.HasParent(object) {
-			return errors.Fail(ErrBadObject{}, nil, "Circular object references are not permitted")
-		} else {
-			o.children = append(o.children, object)
-			object.WithLock(func() error {
-				object.parent = o
-				return nil
-			})
+// Move the object into a new parent object, which may also be nil
+func (o *Object) Move(parent *Object) error {
+	oldParent := o.Parent()
+	if oldParent != nil {
+		if err := oldParent.RemoveObject(o); err != nil {
+			return err
 		}
+	}
+	return o.WithLock(func() error {
+		o.parent = parent
 		return nil
 	})
 }
@@ -146,7 +162,7 @@ func (o *Object) GetComponentsInChildren(T reflect.Type) iter.Iter {
 // Update all components in this object
 func (o *Object) Update(step float32, runtime *Runtime) {
 	clone := o.components
-	context := Context{Object: o, DeltaTime: step, Logger: runtime.logger}
+	context := Context{Object: o, DeltaTime: step, Logger: runtime.logger, Runtime: runtime}
 	for i := 0; i < len(clone); i++ {
 		clone[i].updateComponent(step, runtime, &context)
 	}
@@ -229,6 +245,16 @@ func (o *Object) GetObject(name string) (*Object, error) {
 	return nil, errors.Fail(ErrNoMatch{}, nil, fmt.Sprintf("No match for object '%s' on parent '%s'", name, o.name))
 }
 
+// HasObject is a single return value test for named object existence.
+func (o *Object) HasObject(name string) bool {
+	for i := 0; i < len(o.children); i++ {
+		if o.children[i].name == name {
+			return true
+		}
+	}
+	return false
+}
+
 // Debug prints out a summary of the object and its components
 func (o *Object) Debug(indents ...int) string {
 	indent := 0
@@ -282,6 +308,10 @@ func (o *Object) WithLock(action func() error) (err error) {
 		o.locked = false
 		o.writeLock.Unlock()
 	})()
+
+	// fmt.Printf("Lock: %s\n", o.name)
+	// debug.PrintStack()
+
 	o.writeLock.Lock()
 	o.locked = true
 	err = action()

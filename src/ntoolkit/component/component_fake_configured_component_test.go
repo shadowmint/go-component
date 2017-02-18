@@ -3,7 +3,6 @@ package component_test
 import (
 	"reflect"
 	"ntoolkit/component"
-	"ntoolkit/errors"
 )
 
 type FakeConfiguredComponentData struct {
@@ -28,17 +27,13 @@ func (fake *FakeConfiguredComponent) New() component.Component {
 }
 
 func (fake *FakeConfiguredComponent) Serialize() (interface{}, error) {
-	return fake.Data, nil
+	return component.SerializeState(&fake.Data)
 }
 
 func (fake *FakeConfiguredComponent) Deserialize(raw interface{}) error {
 	var data FakeConfiguredComponentData
-	if err := component.AsObject(&data, raw); err != nil {
-		if errors.Is(err, component.ErrNullValue{}) {
-			return nil
-		} else {
-			return err
-		}
+	if err := component.DeserializeState(&data, raw); err != nil {
+		return err
 	}
 	fake.Data = data
 	return nil
