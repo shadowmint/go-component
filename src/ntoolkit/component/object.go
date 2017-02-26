@@ -180,6 +180,14 @@ func (o *Object) Name() string {
 	return o.name
 }
 
+// Rename the object
+func (o *Object) Rename(name string) {
+  o.WithLock(func() error {
+    o.name = name
+    return nil
+  })
+}
+
 // Return the unique id of this object.
 func (o *Object) ID() string {
 	return o.id
