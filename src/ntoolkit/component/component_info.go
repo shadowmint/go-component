@@ -37,10 +37,12 @@ func (info *componentInfo) updateComponent(step float32, runtime *Runtime, conte
 	if info.Active == 0 && info.Start != nil {
 		runtime.workers.Run(func() {
 			info.Start.Start(context)
+			info.Active += 1
 		})
 	} else if info.Update != nil {
 		runtime.workers.Run(func() {
 			info.Update.Update(context)
+			info.Active += 1
 		})
 	}
 }
