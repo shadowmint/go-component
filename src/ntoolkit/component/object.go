@@ -1,13 +1,15 @@
 package component
 
 import (
-	"ntoolkit/iter"
-	"reflect"
 	"fmt"
-	"strings"
-	"ntoolkit/errors"
-	"sync"
+	"log"
+	"reflect"
 	_ "runtime/debug"
+	"strings"
+	"sync"
+
+	"ntoolkit/errors"
+	"ntoolkit/iter"
 )
 
 // Node is a game object type.
@@ -76,6 +78,7 @@ func (o *Object) Move(parent *Object) error {
 	}
 	return o.WithLock(func() error {
 		o.parent = parent
+		o.runtime = parent.runtime // see Runtime()
 		return nil
 	})
 }
@@ -98,6 +101,7 @@ func (o *Object) RemoveObject(object *Object) error {
 		}
 		object.WithLock(func() error {
 			object.parent = nil
+			object.runtime = nil
 			return nil
 		})
 		return nil
@@ -160,11 +164,29 @@ func (o *Object) GetComponentsInChildren(T reflect.Type) iter.Iter {
 }
 
 // Update all components in this object
-func (o *Object) Update(step float32, runtime *Runtime) {
+func (o *Object) Update(step float32, runtime ...*Runtime) {
+	activeRuntime := o.runtime
+	if len(runtime) > 0 {
+		activeRuntime = runtime[0]
+	}
 	clone := o.components
-	context := Context{Object: o, DeltaTime: step, Logger: runtime.logger, Runtime: runtime}
+	context := o.NewContext(step, activeRuntime)
 	for i := 0; i < len(clone); i++ {
-		clone[i].updateComponent(step, runtime, &context)
+		clone[i].updateComponent(step, activeRuntime, context)
+	}
+}
+
+// Return a context for an object
+func (o *Object) NewContext(delta float32, runtime ...*Runtime) *Context {
+	activeRuntime := o.runtime
+	if len(runtime) > 0 {
+		activeRuntime = runtime[0]
+	}
+	return &Context{
+		Object:    o,
+		DeltaTime: delta,
+		Logger:    activeRuntime.logger,
+		Runtime:   activeRuntime,
 	}
 }
 
@@ -182,10 +204,10 @@ func (o *Object) Name() string {
 
 // Rename the object
 func (o *Object) Rename(name string) {
-  o.WithLock(func() error {
-    o.name = name
-    return nil
-  })
+	o.WithLock(func() error {
+		o.name = name
+		return nil
+	})
 }
 
 // Return the unique id of this object.
@@ -214,6 +236,29 @@ func (o *Object) Find(component interface{}, query ...string) error {
 	}
 
 	reflect.ValueOf(component).Elem().Set(reflect.ValueOf(cmp))
+	return nil
+}
+
+func (o *Object) Runtime() *Runtime {
+	if o.runtime != nil {
+		return o.runtime
+	}
+	marker := o.parent
+	for marker != nil {
+		if marker.runtime != nil {
+			o.runtime = marker.runtime
+			return o.runtime
+		}
+		marker = marker.parent
+	}
+	return nil
+}
+
+func (o *Object) Logger() *log.Logger {
+	runtime := o.runtime
+	if runtime != nil {
+		return runtime.logger
+	}
 	return nil
 }
 
