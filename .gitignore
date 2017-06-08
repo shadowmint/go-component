@@ -32,3 +32,4 @@ src/gopkg.in
 # npm
 vendor
 node_modules
+.idea
