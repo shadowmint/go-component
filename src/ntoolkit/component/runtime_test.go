@@ -60,8 +60,8 @@ func TestComponentsAreUpdated(T *testing.T) {
 		root := component.NewObject()
 		root.AddObject(obj)
 
-		count, _ := iter.Count(root.Objects())
-		T.Assert(count == 2)
+		count, _ := iter.Count(root.ObjectsInChildren())
+		T.Assert(count == 1)
 
 		count, err := iter.Count(root.GetComponentsInChildren(reflect.TypeOf((*FakeComponent)(nil))))
 		T.Assert(err == nil)

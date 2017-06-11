@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 )
 
-// ObjectTemplate is a simple, flat, serializable object structure that directly converts to and from Objects.
+// ObjectTemplate is a simple, flat, serializable object structure that directly converts to and from ObjectsInChildren.
 type ObjectTemplate struct {
 	Name       string
 	Components []ComponentTemplate

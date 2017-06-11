@@ -11,6 +11,7 @@ import (
 	"ntoolkit/component"
 	"strings"
 	"io/ioutil"
+	"ntoolkit/iter"
 )
 
 // Add remove child adds a new child every second.
@@ -75,6 +76,67 @@ func (c *DumpState) Update(context *component.Context) {
 	}
 }
 
+func TestComplexSerialization(T *testing.T) {
+	assert.Test(T, func(T *assert.T) {
+		logger := log.New(os.Stdout, "Runtime: ", log.Ldate|log.Ltime|log.Lshortfile)
+		logger.SetOutput(ioutil.Discard) // No output thanks
+
+		runtime := component.NewRuntime(component.Config{
+			ThreadPoolSize: 10,
+			Logger:         logger})
+
+		runtime.Factory().Register(&AddRemoveChild{})
+
+		runtime.Root().AddComponent(&DumpState{})
+
+		o1 := component.NewObject("Container One")
+		w1 := component.NewObject("Worker 1")
+		w2 := component.NewObject("Worker 2")
+
+		o2 := component.NewObject("Container Two")
+		w3 := component.NewObject("Worker 3")
+		w4 := component.NewObject("Worker 4")
+
+		o1.AddObject(w1)
+		o1.AddObject(w2)
+
+		o2.AddObject(w3)
+		o2.AddObject(w4)
+
+		o1.AddObject(o2)
+
+		w1.AddComponent(&AddRemoveChild{})
+		w2.AddComponent(&AddRemoveChild{})
+		w3.AddComponent(&AddRemoveChild{})
+		w4.AddComponent(&AddRemoveChild{})
+
+		runtime.Root().AddObject(o1)
+
+		runtime.Update(0.1)
+
+		// Serialize o2 as an object template
+		marker, err := runtime.Root().FindObject("Container One")
+		T.Assert(err == nil)
+
+		prefab, err := runtime.Extract(marker)
+		T.Assert(err == nil)
+
+		prefab.Name = "Copy 1"
+		instance1, err := runtime.Insert(prefab, runtime.Root())
+		T.Assert(err == nil)
+		T.Assert(instance1 != nil)
+
+		prefab.Name = "Copy 2"
+		instance2, err := runtime.Insert(prefab, runtime.Root())
+		T.Assert(err == nil)
+		T.Assert(instance2 != nil)
+
+		all, err := iter.Collect(runtime.Root().Objects())
+		T.Assert(err == nil)
+		T.Assert(len(all) == 2)
+	})
+}
+
 func TestComplexRuntime(T *testing.T) {
 	assert.Test(T, func(T *assert.T) {
 		logger := log.New(os.Stdout, "Runtime: ", log.Ldate|log.Ltime|log.Lshortfile)
@@ -129,7 +191,7 @@ object: Untitled (2 / 1)
    object: Container Two (0 / 0)`, " \n")
 
 		actualOutput := strings.Trim(runtime.Root().Debug(), " \n")
-		
+
 		T.Assert(expectedOutput == actualOutput)
 	})
 }

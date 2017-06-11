@@ -138,9 +138,14 @@ func (o *Object) Root() *Object {
 	return i
 }
 
-// Objects returns an iterator of all the child objects on a game object
+// Objects returns an iterator of all immediate child objects on a game object
 func (o *Object) Objects() iter.Iter {
-	return fromObject(o)
+	return fromObject(o, false)
+}
+
+// ObjectsInChildren returns an iterator of all the child objects on a game object
+func (o *Object) ObjectsInChildren() iter.Iter {
+	return fromObject(o, true)
 }
 
 // GetComponents returns an iterator of all components matching the given type.
@@ -148,10 +153,10 @@ func (o *Object) GetComponents(T reflect.Type) iter.Iter {
 	return fromComponentArray(&o.components, T)
 }
 
-// GetComponentsInChildren returns an iterator of all components matching the given type in all childreo.
+// GetComponentsInChildren returns an iterator of all components matching the given type in all children.
 func (o *Object) GetComponentsInChildren(T reflect.Type) iter.Iter {
 	cIter := fromComponentArray(nil, T)
-	objIter := o.Objects()
+	objIter := o.ObjectsInChildren()
 	var val interface{} = nil
 	var err error = nil
 	for val, err = objIter.Next(); err == nil; val, err = objIter.Next() {

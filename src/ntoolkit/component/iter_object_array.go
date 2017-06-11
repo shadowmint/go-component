@@ -9,18 +9,21 @@ import (
 // ObjectIter implements Iterator for []Object
 type ObjectIter struct {
 	values *list.List
+	decend bool
 	err    error
 }
 
 // fromObjectArray returns a new list iterator for a list
-func fromObject(root *Object) *ObjectIter {
-	rtn := &ObjectIter{values: list.New()}
+func fromObject(root *Object, decend bool) *ObjectIter {
+	rtn := &ObjectIter{values: list.New(), decend: decend}
 	if root == nil {
 		rtn.err = errors.Fail(ErrNullValue{}, nil, "Invalid root object")
 	} else if len(root.children) == 0 {
 		rtn.err = errors.Fail(iter.ErrEndIteration{}, nil, "No more values")
 	} else {
-		rtn.values.PushBack(root)
+		for i := 0; i < len(root.children); i++ {
+			rtn.values.PushBack(root.children[i])
+		}
 	}
 	return rtn
 }
@@ -47,8 +50,10 @@ func (iterator *ObjectIter) nextObject() *Object {
 	if el != nil {
 		iterator.values.Remove(el)
 		obj := el.Value.(*Object)
-		for i := 0; i < len(obj.children); i++ {
-			iterator.values.PushBack(obj.children[i])
+		if iterator.decend {
+			for i := 0; i < len(obj.children); i++ {
+				iterator.values.PushBack(obj.children[i])
+			}
 		}
 		return obj
 	} else {
